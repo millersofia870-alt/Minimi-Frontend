@@ -1,0 +1,21 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronRight, Stethoscope, Star, Loader2 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext.jsx';
+import { useSession } from '../context/SessionContext.jsx';
+import { api, tryApi } from '../lib/api.js';
+import Card from '../components/ui/Card.jsx';
+import Button from '../components/ui/Button.jsx';
+import { Field } from '../components/ui/Field.jsx';
+import FarmerLayout from '../components/farmer/FarmerLayout.jsx';
+import { vetsList } from '../data/mockData.js';
+
+export default function FarmerRequestService() {
+  const { c } = useTheme(); const { user } = useSession(); const navigate = useNavigate();
+  const [step, setStep] = useState('vets'), [vets, setVets] = useState([]), [selectedVetId, setSelectedVetId] = useState(null), [loading, setLoading] = useState(true), [submitting, setSubmitting] = useState(false), [form, setForm] = useState({ animalOrCropType: '', description: '' });
+  const county = user?.county || 'Kiambu', subCounty = user?.subCounty || 'Ruiru';
+  useEffect(() => { tryApi(async () => (await api.get('/vets/nearby', { params: { county, subCounty } })).data.vets, vetsList.filter((v) => v.status === 'approved' && v.county === county)).then(setVets).finally(() => setLoading(false)); }, [county, subCounty]);
+  const submit = async () => { if (!selectedVetId || !form.animalOrCropType.trim() || !form.description.trim()) return; setSubmitting(true); const created = await tryApi(async () => (await api.post('/service-requests', { county, subCounty, ...form, vetId: selectedVetId })).data.request, null); setSubmitting(false); if (created) navigate('/farmer'); };
+  const inputStyle = { background: c.bgElevated, border: `1px solid ${c.border}`, color: c.text };
+  return <FarmerLayout title="Request a vet" subtitle="Choose a vet first, then submit your service request."><Card className="p-5 sm:p-6">{step === 'vets' ? <><h2 className="font-semibold text-lg">1. Choose a vet near you</h2><p className="text-sm mb-5" style={{ color: c.textMuted }}>{county} · {subCounty}</p>{loading ? <div className="py-10 text-center"><Loader2 className="animate-spin inline" color={c.teal}/></div> : <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">{vets.map((v) => <button key={v.id} onClick={() => setSelectedVetId(v.id)} className="rounded-xl p-4 text-left" style={selectedVetId === v.id ? { background: c.goldSoft, border: `1px solid ${c.gold}` } : { border: `1px solid ${c.border}` }}><div className="w-20 h-20 rounded-full flex items-center justify-center mb-3 overflow-hidden" style={{ background: c.tealSoft }}>{v.profileImageUrl ? <img src={v.profileImageUrl} alt="" className="w-full h-full object-cover"/> : <Stethoscope size={24} color={c.teal}/>}</div><p className="font-medium text-sm truncate">{v.fullName}</p><p className="text-xs" style={{ color: c.textFaint }}>{v.subCounty}</p>{v.rating && <p className="text-xs mt-2 flex gap-1"><Star size={12} fill={c.gold} color={c.gold}/>{v.rating}</p>}</button>)}</div>}{!loading && !vets.length && <p className="py-8 text-center" style={{ color: c.textFaint }}>No approved vets are available in your area yet.</p>}<Button variant="primary" className="mt-5" disabled={!selectedVetId} onClick={() => setStep('details')}>Continue <ChevronRight size={15}/></Button></> : <><h2 className="font-semibold text-lg mb-5">2. Request service</h2><div className="mb-4"><Field label="Livestock / crop type" placeholder="e.g. Cattle, poultry, maize" value={form.animalOrCropType} onChange={(e) => setForm((f) => ({ ...f, animalOrCropType: e.target.value }))}/></div><label className="block mb-5"><span className="text-xs font-semibold mb-1.5 block" style={{ color: c.textMuted }}>Describe the issue</span><textarea rows={4} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Explain what you need help with" className="w-full rounded-lg px-3.5 py-2.5 text-sm outline-none resize-none" style={inputStyle}/></label><div className="flex gap-2"><Button variant="outline" onClick={() => setStep('vets')}>Back</Button><Button variant="primary" disabled={submitting} onClick={submit}>{submitting ? <Loader2 size={15} className="animate-spin"/> : 'Send request'}</Button></div></>}</Card></FarmerLayout>;
+}

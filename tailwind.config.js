@@ -1,0 +1,15 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,jsx}'],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      fontFamily: {
+        display: ['"Space Grotesk"', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'monospace'],
+      },
+    },
+  },
+  plugins: [],
+};
