@@ -7,6 +7,7 @@ import Button from '../components/ui/Button.jsx';
 import Card from '../components/ui/Card.jsx';
 import ThemeToggle from '../components/ui/ThemeToggle.jsx';
 import { Field, SelectField } from '../components/ui/Field.jsx';
+import { PhoneInput, COUNTRIES } from '../components/ui/PhoneInput.jsx';
 import { COUNTIES } from '../data/mockData.js';
 
 export default function Auth() {
@@ -39,6 +40,7 @@ export default function Auth() {
 
   const inputStyle = { background: c.bgElevated, border: `1px solid ${c.border}`, color: c.text };
   const setField = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const setPhone = (val) => setForm((f) => ({ ...f, phone: val }));
 
   const handleCountyChange = (val) => {
     setCounty(val);
@@ -49,14 +51,15 @@ export default function Auth() {
     setError('');
     setLoading(true);
     try {
+      const fullPhone = COUNTRIES[0].code.replace('+', '') + form.phone;
       if (mode === 'register') {
-        const payload = { ...form, county, subCounty };
+        const payload = { ...form, phone: fullPhone, county, subCounty };
         if (role === 'vet' && passportImage) {
           payload.passportImage = passportImage;
         }
         await register(role, payload);
       }
-      const res = await requestOtp(role, form.phone, form.idNumber);
+      const res = await requestOtp(role, fullPhone, form.idNumber);
       if (res?.devCode) setDevCode(res.devCode);
       setOtpStep(true);
     } catch (err) {
@@ -70,7 +73,8 @@ export default function Auth() {
     setError('');
     setLoading(true);
     try {
-      await verifyOtp(role, form.phone, form.idNumber, code);
+      const fullPhone = COUNTRIES[0].code.replace('+', '') + form.phone;
+      await verifyOtp(role, fullPhone, form.idNumber, code);
       const redirect = searchParams.get('redirect');
       if (redirect) {
         const params = new URLSearchParams(searchParams);
@@ -155,7 +159,7 @@ export default function Auth() {
             <div className="space-y-4">
               {mode === 'register' && <Field label="Full name" placeholder="e.g. Jane Wanjiru" value={form.fullName} onChange={setField('fullName')} />}
               <Field label="National ID number" placeholder="e.g. 32145678" mono value={form.idNumber} onChange={setField('idNumber')} />
-              <Field label="Phone number" placeholder="e.g. 254712345678" mono value={form.phone} onChange={setField('phone')} />
+              <PhoneInput label="Phone number" placeholder="712345678" mono value={form.phone} onChange={setPhone} prefix={COUNTRIES[0].code} />
               {mode === 'register' && (
                 <div className="grid grid-cols-2 gap-3">
                   <SelectField label="County" value={county} onChange={handleCountyChange} options={Object.keys(COUNTIES)} />

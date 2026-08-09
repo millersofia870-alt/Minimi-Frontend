@@ -14,8 +14,8 @@ export default function VetProfile() {
   const navigate = useNavigate();
 
   const vet = user ?? {
-    fullName: 'Dr. Achieng', phone: '254700000001', idNumber: '30000001',
-    county: 'Kiambu', subCounty: 'Ruiru', status: 'approved',
+    fullName: '', phone: '', idNumber: '',
+    county: '', subCounty: '', status: '',
   };
 
   const rows = [

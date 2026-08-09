@@ -51,7 +51,7 @@ export default function AdminDeposits() {
       if (farmerId.trim()) params.farmerId = farmerId.trim();
 
       const data = await tryApi(
-        async () => (await api.get('/admin/deposits', { params })).data,
+        async () => (await api.get('/admin/deposits?limit=10', { params })).data,
         { deposits: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } },
       );
 

@@ -10,51 +10,6 @@ import VetLayout from '../components/vet/VetLayout.jsx';
 import { formatDateTime, formatKes } from '../data/mockData.js';
 
 const MOCK_PAYMENTS = [
-  {
-    id: "1aa9c434-3937-45cb-9cd6-2b348c8aeeca",
-    requestId: "f783d0a7-cae3-4d90-aef7-7438c0bdca68",
-    farmerId: "906f13c4-f2d5-4a49-a187-4eab66668c2c",
-    vetId: "9bf0756e-3981-4ecd-bad0-a75b07ef5526",
-    amount: 1,
-    mpesaReceiptNumber: "UH36P1F3SJ",
-    phone: "0796598108",
-    status: "success",
-    checkoutRequestId: "ws_CO_030820261255513796598108",
-    createdAt: "2026-08-03T09:55:46.000Z",
-    completedAt: "2026-08-03T09:55:58.000Z",
-    farmerName: "James Maina",
-    vetName: "Clement Kariuki"
-  },
-  {
-    id: "6514a021-9e56-4f07-b8d2-a1fe77e3689d",
-    requestId: "f783d0a7-cae3-4d90-aef7-7438c0bdca68",
-    farmerId: "906f13c4-f2d5-4a49-a187-4eab66668c2c",
-    vetId: "9bf0756e-3981-4ecd-bad0-a75b07ef5526",
-    amount: 1,
-    mpesaReceiptNumber: null,
-    phone: "0796598108",
-    status: "failed",
-    checkoutRequestId: "ws_CO_030820261253051796598108",
-    createdAt: "2026-08-03T09:52:59.000Z",
-    completedAt: "2026-08-03T09:53:15.000Z",
-    farmerName: "James Maina",
-    vetName: "Clement Kariuki"
-  },
-  {
-    id: "3039f7c4-aba1-4ce9-8517-85559f8741c6",
-    requestId: "f783d0a7-cae3-4d90-aef7-7438c0bdca68",
-    farmerId: "906f13c4-f2d5-4a49-a187-4eab66668c2c",
-    vetId: "9bf0756e-3981-4ecd-bad0-a75b07ef5526",
-    amount: 1,
-    mpesaReceiptNumber: "UH36P1F1AW",
-    phone: "0796598108",
-    status: "success",
-    checkoutRequestId: "ws_CO_030820261252112796598108",
-    createdAt: "2026-08-03T09:52:05.000Z",
-    completedAt: "2026-08-03T09:52:27.000Z",
-    farmerName: "James Maina",
-    vetName: "Clement Kariuki"
-  }
 ];
 
 export default function VetEarnings() {
@@ -70,7 +25,7 @@ export default function VetEarnings() {
   const loadPayments = useCallback(async (currentPage = page) => {
     setLoading(true);
     const data = await tryApi(
-      async () => (await api.get(`/payments/vet/${vetId}?page=${currentPage}&limit=10`)).data,
+      async () => (await api.get(`/payments/vet/${vetId}?page=${currentPage}&limit=8`)).data,
       { payments: MOCK_PAYMENTS, pagination: { total: MOCK_PAYMENTS.length, totalPages: 1, page: 1, limit: 10 } }
     );
     setPayments(data?.payments || []);

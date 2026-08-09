@@ -18,10 +18,10 @@ export default function AdminDashboard() {
   const [countyRequests, setCountyRequests] = useState(initialCountyRequests);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState({
-    totalFarmers: 4382,
-    totalVets: 316,
-    totalAmountToday: 84200,
-    totalEarnings: 6200000,
+    totalFarmers: 0,
+    totalVets: 0,
+    totalAmountToday: 0,
+    totalEarnings: 0,
     depositStats: {
       totalDeposit: 0,
       todayDeposit: 0,
@@ -48,7 +48,7 @@ export default function AdminDashboard() {
     async function loadRecentRequests() {
       setLoading(true);
       const data = await tryApi(
-        async () => (await api.get('/admin/service-requests', { params: { page: 1 } })).data,
+        async () => (await api.get('/admin/service-requests', { params: { page: 1 , limit: 5} })).data,
         { requests: initialRequests },
       );
 
@@ -60,7 +60,7 @@ export default function AdminDashboard() {
 
     async function loadTopVets() {
       const data = await tryApi(
-        async () => (await api.get('/admin/dashboard/top-vets')).data,
+        async () => (await api.get('/admin/dashboard/top-vets?limit=5')).data,
         { vets: initialTopVets },
       );
 

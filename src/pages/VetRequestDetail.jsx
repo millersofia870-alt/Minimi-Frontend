@@ -8,6 +8,7 @@ import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
 import { Field } from '../components/ui/Field.jsx';
+import { PhoneInput, COUNTRIES } from '../components/ui/PhoneInput.jsx';
 import ChatWindow from '../components/ChatWindow.jsx';
 import VetLayout from '../components/vet/VetLayout.jsx';
 import { myVetRequests, sampleChatMessages, formatDateTime } from '../data/mockData.js';
@@ -25,7 +26,14 @@ export default function VetRequestDetail() {
 
   const [showPayForm, setShowPayForm] = useState(false);
   const [amount, setAmount] = useState(initial.serviceFee?.toString() || '');
-  const [phone, setPhone] = useState(initial.farmerPhone || '');
+  const [phone, setPhone] = useState(() => {
+    const raw = initial.farmerPhone || '';
+    const matched = COUNTRIES.find((c) => raw.startsWith(c.code.replace('+', '')));
+    if (matched) {
+      return raw.slice(matched.code.replace('+', '').length);
+    }
+    return raw;
+  });
   const [payLoading, setPayLoading] = useState(false);
   const [payResult, setPayResult] = useState(null); // null | 'sent' | 'success' | 'failed' | 'error'
   const [payReceipt, setPayReceipt] = useState(null);
@@ -88,9 +96,9 @@ export default function VetRequestDetail() {
 
     const result = await tryApi(
       async () => (await api.post('/mpesa/stk-push', {
-        requestId: id, amount: Number(amount), phone: phone,
+        requestId: id, amount: Number(amount), phone: COUNTRIES[0].code.replace('+', '') + phone,
       })).data.payment,
-      { mock: true } // fallback still counts as "sent" for demo purposes
+      { mock: true }
     );
 
     setPayLoading(false);
@@ -152,12 +160,11 @@ export default function VetRequestDetail() {
                 <div className="text-center space-y-2 py-2">
                   <Loader2 size={28} className="animate-spin mx-auto" color={c.gold} />
                   <p className="text-sm font-semibold">STK Push Sent</p>
-                  <p className="text-xs" style={{ color: c.textMuted }}>Waiting for the farmer to confirm on <strong>{phone}</strong>…</p>
+                  <p className="text-xs" style={{ color: c.textMuted }}>Waiting for the farmer to confirm on <strong>{COUNTRIES[0].code}{phone}</strong>…</p>
                 </div>
-              ) : showPayForm ? (
+               ) : showPayForm ? (
                 <div className="space-y-3">
-                  <Field label="Farmer phone number" placeholder="e.g. 254..." mono type="text"
-                    value={phone} onChange={(e) => setPhone(e.target.value)} />
+                  <PhoneInput label="Farmer phone number" placeholder="712345678" mono value={phone} onChange={setPhone} prefix={COUNTRIES[0].code} />
                   <Field label={`Amount to charge ${request.farmerName}`} placeholder="e.g. 1500" mono type="number"
                     value={amount} onChange={(e) => setAmount(e.target.value)} />
                   {payResult === 'error' && (

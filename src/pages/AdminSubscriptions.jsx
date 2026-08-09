@@ -361,6 +361,7 @@ export default function AdminSubscriptions() {
                   style={{ background: c.bgElevated, borderColor: c.border, color: c.text }}
                   required
                 />
+                <p className="text-[10px] mt-1" style={{ color: c.textFaint }}>Tip: Separate points or statements with commas (e.g. "Priority vet dispatch, Discounted fees, Farm health support")</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

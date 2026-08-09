@@ -28,6 +28,8 @@ export default function FarmerChats() {
   const [threads, setThreads] = useState([]);
   const [loadingThreads, setLoadingThreads] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
+  const [threadPage, setThreadPage] = useState(1);
+  const [threadPagination, setThreadPagination] = useState({ page: 1, totalPages: 1, hasNext: false });
 
   // Find-a-vet tab
   const [county, setCounty] = useState(user?.county || 'Kiambu');
@@ -36,25 +38,28 @@ export default function FarmerChats() {
   const [startingId, setStartingId] = useState(null);
 
   // Load inbox threads from real API
-  const loadThreads = useCallback(async () => {
+  const loadThreads = useCallback(async (page = 1, reset = true) => {
     setLoadingThreads(true);
     const data = await tryApi(
-      async () => (await api.get('/chat/inbox')).data.threads,
-      []
+      async () => (await api.get('/chat/inbox', { params: { page, limit: 8 } })).data,
+      { threads: [], pagination: { page: 1, totalPages: 1, hasNext: false } }
     );
-    setThreads(data || []);
+    const newThreads = data.threads || [];
+    setThreads((prev) => reset ? newThreads : [...prev, ...newThreads]);
+    setThreadPagination(data.pagination || { page: 1, totalPages: 1, hasNext: false });
+    setThreadPage(page);
     setLoadingThreads(false);
   }, []);
 
   useEffect(() => {
-    loadThreads();
+    loadThreads(1, true);
   }, [loadThreads]);
 
   // Refresh thread list when a new message comes in (updates lastMessage preview)
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
-    const onMsg = () => loadThreads();
+    const onMsg = () => loadThreads(1, true);
     socket.on('receive_message', onMsg);
     return () => socket.off('receive_message', onMsg);
   }, [loadThreads]);
@@ -102,6 +107,13 @@ export default function FarmerChats() {
 
   const selected = threads.find((t) => t.requestId === selectedId);
 
+  const handleThreadScroll = useCallback((e) => {
+    const el = e.currentTarget;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 60 && threadPagination.hasNext && !loadingThreads) {
+      loadThreads(threadPage + 1, false);
+    }
+  }, [threadPagination, threadPage, loadingThreads, loadThreads]);
+
   return (
     <FarmerLayout title="Chat with Vets" subtitle="Message vets on your requests, or find a new vet near you.">
       {/* Tabs */}
@@ -146,7 +158,7 @@ export default function FarmerChats() {
                 <RefreshCw size={12} className={loadingThreads ? 'animate-spin' : ''} />
               </button>
             </div>
-            <div className="divide-y" style={{ borderColor: c.border }}>
+            <div className="divide-y overflow-y-auto max-h-[60vh]" style={{ borderColor: c.border }} onScroll={handleThreadScroll}>
               {loadingThreads ? (
                 <div className="flex items-center justify-center gap-2 py-12" style={{ color: c.textFaint }}>
                   <Loader2 size={16} className="animate-spin" />
@@ -210,6 +222,12 @@ export default function FarmerChats() {
                     </div>
                   </button>
                 ))
+              )}
+              {loadingThreads && threadPage > 1 && (
+                <div className="flex items-center justify-center gap-2 py-3" style={{ color: c.textFaint }}>
+                  <Loader2 size={14} className="animate-spin" />
+                  <span className="text-xs">Loading more…</span>
+                </div>
               )}
             </div>
           </Card>

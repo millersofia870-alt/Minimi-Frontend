@@ -25,31 +25,43 @@ export default function VetChats() {
   const [threads, setThreads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
+  const [threadPage, setThreadPage] = useState(1);
+  const [threadPagination, setThreadPagination] = useState({ page: 1, totalPages: 1, hasNext: false });
 
-  const loadThreads = useCallback(async () => {
+  const loadThreads = useCallback(async (page = 1, reset = true) => {
     setLoading(true);
     const data = await tryApi(
-      async () => (await api.get('/chat/inbox')).data.threads,
-      []
+      async () => (await api.get('/chat/inbox', { params: { page, limit: 8 } })).data,
+      { threads: [], pagination: { page: 1, totalPages: 1, hasNext: false } }
     );
-    setThreads(data || []);
+    const newThreads = data.threads || [];
+    setThreads((prev) => reset ? newThreads : [...prev, ...newThreads]);
+    setThreadPagination(data.pagination || { page: 1, totalPages: 1, hasNext: false });
+    setThreadPage(page);
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    loadThreads();
+    loadThreads(1, true);
   }, [loadThreads]);
 
   // Live refresh thread list when a new message arrives
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
-    const onMsg = () => loadThreads();
+    const onMsg = () => loadThreads(1, true);
     socket.on('receive_message', onMsg);
     return () => socket.off('receive_message', onMsg);
   }, [loadThreads]);
 
   const selected = threads.find((t) => t.requestId === selectedId);
+
+  const handleThreadScroll = useCallback((e) => {
+    const el = e.currentTarget;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 60 && threadPagination.hasNext && !loading) {
+      loadThreads(threadPage + 1, false);
+    }
+  }, [threadPagination, threadPage, loading, loadThreads]);
 
   return (
     <VetLayout title="Messages" subtitle="Conversations with farmers across your active requests.">
@@ -70,7 +82,7 @@ export default function VetChats() {
             </button>
           </div>
 
-          <div className="divide-y" style={{ borderColor: c.border }}>
+          <div className="divide-y overflow-y-auto max-h-[60vh]" style={{ borderColor: c.border }} onScroll={handleThreadScroll}>
             {loading ? (
               <div className="flex items-center justify-center gap-2 py-12" style={{ color: c.textFaint }}>
                 <Loader2 size={16} className="animate-spin" />
@@ -134,10 +146,16 @@ export default function VetChats() {
                       <StatusBadge status={t.status} />
                     </div>
                   </div>
-                </button>
-              ))
-            )}
-          </div>
+                  </button>
+                ))
+              )}
+              {loading && threadPage > 1 && (
+                <div className="flex items-center justify-center gap-2 py-3" style={{ color: c.textFaint }}>
+                  <Loader2 size={14} className="animate-spin" />
+                  <span className="text-xs">Loading more…</span>
+                </div>
+              )}
+            </div>
         </Card>
 
         {/* Chat window */}

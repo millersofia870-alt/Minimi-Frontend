@@ -9,6 +9,7 @@ import Button from '../components/ui/Button.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
 import Pagination from '../components/ui/Pagination.jsx';
 import { formatDateTime, formatKes } from '../data/mockData.js';
+import { PhoneInput, COUNTRIES } from '../components/ui/PhoneInput.jsx';
 
 export default function FarmerWallet() {
   const { c } = useTheme();
@@ -20,17 +21,17 @@ export default function FarmerWallet() {
   const [notice, setNotice] = useState('');
   const [paymentRequests, setPaymentRequests] = useState([]);
   const [requestsPage, setRequestsPage] = useState(1);
-  const [requestsPagination, setRequestsPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
+  const [requestsPagination, setRequestsPagination] = useState({ page: 1, limit: 8, total: 0, totalPages: 1 });
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [processingId, setProcessingId] = useState(null);
   const [historyPage, setHistoryPage] = useState(1);
-  const [historyPagination, setHistoryPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
+  const [historyPagination, setHistoryPagination] = useState({ page: 1, limit: 8, total: 0, totalPages: 1 });
 
   useEffect(() => {
-    api.get('/wallet', { params: { page: historyPage, limit: 10 } })
+    api.get('/wallet', { params: { page: historyPage, limit: 8} })
       .then(({ data: d }) => {
         setData(d);
-        setHistoryPagination(d.pagination ?? { page: 1, limit: 10, total: 0, totalPages: 1 });
+        setHistoryPagination(d.pagination ?? { page: 1, limit: 8, total: 0, totalPages: 1 });
       })
       .catch(() => setData({ wallet: { balance: 0 }, transactions: [
         { id: 'TXN-001', type: 'deposit', amount: 2000, status: 'success', createdAt: '2026-08-01T10:00:00Z' },
@@ -38,9 +39,9 @@ export default function FarmerWallet() {
         { id: 'TXN-003', type: 'payment', amount: 800, status: 'failed', createdAt: '2026-08-03T14:15:00Z' },
       ] }));
     const interval = setInterval(() => {
-      api.get('/wallet', { params: { page: historyPage, limit: 10 } }).then(({ data: d }) => {
+      api.get('/wallet', { params: { page: historyPage, limit: 80 } }).then(({ data: d }) => {
         setData(d);
-        setHistoryPagination(d.pagination ?? { page: 1, limit: 10, total: 0, totalPages: 1 });
+        setHistoryPagination(d.pagination ?? { page: 1, limit: 80, total: 0, totalPages: 1 });
       }).catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
@@ -51,9 +52,9 @@ export default function FarmerWallet() {
     if (!socket) return;
 
     const handleWalletUpdate = () => {
-      api.get('/wallet', { params: { page: historyPage, limit: 10 } }).then(({ data: d }) => {
+      api.get('/wallet', { params: { page: historyPage, limit: 8 } }).then(({ data: d }) => {
         setData(d);
-        setHistoryPagination(d.pagination ?? { page: 1, limit: 10, total: 0, totalPages: 1 });
+        setHistoryPagination(d.pagination ?? { page: 1, limit: 8, total: 0, totalPages: 1 });
       }).catch(() => {});
       if (tab === 'requests') {
         loadPaymentRequests(requestsPage);
@@ -73,9 +74,9 @@ export default function FarmerWallet() {
   const loadPaymentRequests = async (page = 1) => {
     setRequestsLoading(true);
     try {
-      const { data } = await api.get('/wallet/payment-requests', { params: { page, limit: 10 } });
+      const { data } = await api.get('/wallet/payment-requests', { params: { page, limit: 8} });
       setPaymentRequests(data.paymentRequests ?? []);
-      setRequestsPagination(data.pagination ?? { page: 1, limit: 10, total: 0, totalPages: 1 });
+      setRequestsPagination(data.pagination ?? { page: 1, limit: 8, total: 0, totalPages: 1 });
     } catch {
       setPaymentRequests([]);
     } finally {
@@ -99,9 +100,10 @@ export default function FarmerWallet() {
     if (!Number(amount) || !phone) return;
     setDepositing(true);
     try {
-      await api.post('/wallet/deposits/stk-push', { amount: Number(amount), phone });
+      await api.post('/wallet/deposits/stk-push', { amount: Number(amount), phone: COUNTRIES[0].code.replace('+', '') + phone });
       setNotice('STK push sent. Your wallet balance will update after you approve the M-Pesa prompt.');
       setAmount('');
+      setPhone('');
     } catch (e) {
       setNotice(e.response?.data?.error || 'Could not start the deposit.');
     } finally {
@@ -366,12 +368,12 @@ export default function FarmerWallet() {
               className="rounded-lg px-3 py-2.5 text-sm outline-none"
               style={{ background: c.bgElevated, border: `1px solid ${c.border}`, color: c.text }}
             />
-            <input
+            <PhoneInput
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="M-Pesa phone e.g. 2547..."
-              className="rounded-lg px-3 py-2.5 text-sm outline-none"
-              style={{ background: c.bgElevated, border: `1px solid ${c.border}`, color: c.text }}
+              onChange={setPhone}
+              placeholder="712345678"
+              prefix={COUNTRIES[0].code}
+              className="sm:col-span-2"
             />
           </div>
           <Button className="mt-3" variant="teal" onClick={deposit} disabled={depositing}>

@@ -10,28 +10,7 @@ import FarmerLayout from '../components/farmer/FarmerLayout.jsx';
 import { formatDateTime, formatKes } from '../data/mockData.js';
 
 const MOCK_FARMER_PAYMENTS = [
-  {
-    id: "1aa9c434-3937-45cb-9cd6-2b348c8aeeca",
-    type: "vet_service",
-    amount: 1,
-    status: "success",
-    mpesaReceiptNumber: "UH36P1F3SJ",
-    phone: "0796598108",
-    description: "Livestock",
-    createdAt: "2026-08-03T09:55:46.000Z",
-    completedAt: "2026-08-03T09:55:58.000Z",
-  },
-  {
-    id: "3039f7c4-aba1-4ce9-8517-85559f8741c6",
-    type: "subscription",
-    amount: 500,
-    status: "success",
-    mpesaReceiptNumber: null,
-    phone: null,
-    description: "Premium Plan",
-    createdAt: "2026-08-03T09:52:05.000Z",
-    completedAt: "2026-08-03T09:52:27.000Z",
-  }
+ 
 ];
 
 const TYPE_LABELS = {
@@ -45,7 +24,7 @@ export default function FarmerPayments() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({ total: 0, totalPages: 1, page: 1, limit: 10 });
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 1, page: 1, limit: 8});
 
   const farmerId = user?.id;
 
@@ -53,8 +32,8 @@ export default function FarmerPayments() {
     if (!farmerId) return;
     setLoading(true);
     const data = await tryApi(
-      async () => (await api.get(`/payments/farmer/${farmerId}/unified?page=${currentPage}&limit=10`)).data,
-      { payments: MOCK_FARMER_PAYMENTS, pagination: { total: MOCK_FARMER_PAYMENTS.length, totalPages: 1, page: 1, limit: 10 } }
+      async () => (await api.get(`/payments/farmer/${farmerId}/unified?page=${currentPage}&limit=8`)).data,
+      { payments: MOCK_FARMER_PAYMENTS, pagination: { total: MOCK_FARMER_PAYMENTS.length, totalPages: 1, page: 1, limit: 8 } }
     );
     setPayments(data?.payments || []);
     if (data?.pagination) setPagination(data.pagination);

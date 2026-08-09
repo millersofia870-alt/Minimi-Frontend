@@ -52,7 +52,7 @@ export default function AdminReports() {
       );
 
       const revenueData = await tryApi(
-        async () => (await api.get('/admin/reports/revenue-by-county', { params })).data,
+        async () => (await api.get('/admin/reports/revenue-by-county?limit=10', { params })).data,
         { report: [] },
       );
 

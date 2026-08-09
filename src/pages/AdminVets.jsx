@@ -26,12 +26,13 @@ export default function AdminVets() {
 
     if (filter !== 'all') {
       params.status = filter;
+      
     }
 
     async function loadVets() {
       setLoading(true);
       const data = await tryApi(
-        async () => (await api.get('/admin/vets', { params })).data,
+        async () => (await api.get('/admin/vets?limit=10', { params })).data,
         { vets: initialVets, pagination: { page: 1, limit: initialVets.length, total: initialVets.length, totalPages: 1, hasPrev: false, hasNext: false } },
       );
 

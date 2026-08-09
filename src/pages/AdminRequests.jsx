@@ -266,7 +266,7 @@ export default function AdminRequests() {
       if (county !== 'all') params.county = county;
 
       const data = await tryApi(
-        async () => (await api.get('/admin/service-requests', { params })).data,
+        async () => (await api.get('/admin/service-requests?limit=10', { params })).data,
         { requests: initialRequests, pagination: { page: 1, limit: initialRequests.length, total: initialRequests.length, totalPages: 1, hasPrev: false, hasNext: false } },
       );
 

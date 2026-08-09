@@ -11,26 +11,35 @@ import Pagination from '../components/ui/Pagination.jsx';
 import FarmerLayout from '../components/farmer/FarmerLayout.jsx';
 import { myFarmerRequests, formatDateTime } from '../data/mockData.js';
 
+const FILTERS = [
+  { id: 'all', label: 'All' },
+  { id: 'pending', label: 'Pending' },
+  { id: 'accepted', label: 'Accepted' },
+  { id: 'in_progress', label: 'In Progress' },
+  { id: 'completed', label: 'Completed' },
+];
+
 export default function FarmerRequests() {
   const { c } = useTheme();
   const { user } = useSession();
   const navigate = useNavigate();
   const [requests, setRequests] = useState(myFarmerRequests);
   const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({ page: 1, limit: myFarmerRequests.length, total: myFarmerRequests.length, totalPages: 1, hasPrev: false, hasNext: false });
+  const [pagination, setPagination] = useState({ page: 1, limit: 8, total: myFarmerRequests.length, totalPages: 1, hasPrev: false, hasNext: false });
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
       const data = await tryApi(
-        async () => (await api.get('/service-requests/my', { params: { page } })).data,
-        { requests: myFarmerRequests, pagination: { page: 1, limit: myFarmerRequests.length, total: myFarmerRequests.length, totalPages: 1, hasPrev: false, hasNext: false } }
+        async () => (await api.get('/service-requests/my?limit=8', { params: { page } })).data,
+        { requests: myFarmerRequests, pagination: { page: 1, limit: 8, total: myFarmerRequests.length, totalPages: 1, hasPrev: false, hasNext: false } }
       );
       if (!cancelled) {
         setRequests(data.requests ?? []);
-        setPagination(data.pagination ?? { page: 1, limit: data.requests?.length ?? 0, total: data.requests?.length ?? 0, totalPages: 1, hasPrev: false, hasNext: false });
+        setPagination(data.pagination ?? { page: 1, limit: 8?? 0, total: data.requests?.length ?? 0, totalPages: 1, hasPrev: false, hasNext: false });
         setLoading(false);
       }
     }
@@ -38,6 +47,8 @@ export default function FarmerRequests() {
     const interval = setInterval(load, 30000);
     return () => { cancelled = true; clearInterval(interval); };
   }, [page]);
+
+  const filtered = filter === 'all' ? requests : requests.filter((r) => r.status === filter);
 
   return (
     <FarmerLayout title="My requests" subtitle="Track and manage your service requests.">
@@ -55,6 +66,24 @@ export default function FarmerRequests() {
         </Card>
       ) : (
         <Card className="overflow-hidden">
+          <div className="flex items-center gap-1 p-1.5 border-b" style={{ borderColor: c.border, background: c.bgElevated }}>
+            {FILTERS.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setFilter(f.id)}
+                className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
+                style={{
+                  background: filter === f.id ? c.border : 'transparent',
+                  color: filter === f.id ? c.text : c.textMuted,
+                }}
+                onMouseEnter={(e) => { if (filter !== f.id) e.currentTarget.style.background = c.border + '40'; }}
+                onMouseLeave={(e) => { if (filter !== f.id) e.currentTarget.style.background = 'transparent'; }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -72,8 +101,8 @@ export default function FarmerRequests() {
                       Loading requests…
                     </td>
                   </tr>
-                ) : requests.length > 0 ? (
-                  requests.map((r) => (
+                ) : filtered.length > 0 ? (
+                  filtered.map((r) => (
                     <tr key={r.id} className="border-t hover:bg-surfaceHover transition-colors cursor-pointer"
                       style={{ borderColor: c.border }}
                       onClick={() => navigate(`/farmer/requests/${r.id}`)}>
@@ -95,7 +124,7 @@ export default function FarmerRequests() {
                 ) : (
                   <tr>
                     <td colSpan={7} className="px-5 py-10 text-center text-sm" style={{ color: c.textFaint }}>
-                      No requests match these filters.
+                      No requests match this filter.
                     </td>
                   </tr>
                 )}

@@ -10,6 +10,7 @@ import StatusBadge from '../components/ui/StatusBadge.jsx';
 import Pagination from '../components/ui/Pagination.jsx';
 import VetLayout from '../components/vet/VetLayout.jsx';
 import { myVetRequests, formatDateTime } from '../data/mockData.js';
+import { PhoneInput, COUNTRIES } from '../components/ui/PhoneInput.jsx';
 
 const FILTERS = ['all', 'pending', 'accepted', 'completed'];
 
@@ -46,7 +47,7 @@ export default function VetDashboard() {
       if (filter !== 'all') params.status = filter;
 
       const data = await tryApi(
-        async () => (await api.get('/vet/requests', { params })).data,
+        async () => (await api.get('/vet/requests?limit=5', { params })).data,
         { requests: myVetRequests, pagination: { page: 1, limit: myVetRequests.length, total: myVetRequests.length, totalPages: 1, hasPrev: false, hasNext: false } }
       );
 
@@ -104,11 +105,13 @@ export default function VetDashboard() {
   // ── STK Push ────────────────────────────────────────────────────────────────
   const openPayDialog = (r, e) => {
     e.stopPropagation();
+    const raw = r.farmerPhone ?? '';
+    const matched = COUNTRIES.find((c) => raw.startsWith(c.code.replace('+', '')));
     setPayDialog({
       open: true,
       requestId: r.id,
       farmerName: r.farmerName,
-      phone: r.farmerPhone ?? '',
+      phone: matched ? raw.slice(matched.code.replace('+', '').length) : raw,
       amount: r.serviceFee != null ? String(r.serviceFee) : '',
       loading: false,
       result: null,
@@ -125,7 +128,7 @@ export default function VetDashboard() {
       async () => (await api.post('/mpesa/stk-push', {
         requestId: payDialog.requestId,
         amount: Number(payDialog.amount),
-        phone: payDialog.phone,
+        phone: COUNTRIES[0].code.replace('+', '') + payDialog.phone,
       })).data,
       { mock: true }
     );
@@ -454,7 +457,7 @@ export default function VetDashboard() {
                 <CheckCircle2 size={20} className="shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-sm">M-Pesa prompt sent!</p>
-                  <p className="text-sm mt-0.5">The farmer will receive a payment prompt on {payDialog.phone}.</p>
+                   <p className="text-sm mt-0.5">The farmer will receive a payment prompt on {COUNTRIES[0].code}{payDialog.phone}.</p>
                 </div>
               </div>
             ) : payDialog.result === 'wallet-sent' ? (
@@ -462,21 +465,20 @@ export default function VetDashboard() {
                 <CheckCircle2 size={20} className="shrink-0 mt-0.5" />
                 <div><p className="font-semibold text-sm">Wallet request sent!</p><p className="text-sm mt-0.5">The farmer can approve it from their Wallet using their available balance.</p></div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: c.textFaint }}>
-                    Farmer Phone Number
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 254796598108"
-                    value={payDialog.phone}
-                    onChange={(e) => setPayDialog((prev) => ({ ...prev, phone: e.target.value }))}
-                    className="w-full rounded-lg px-3.5 py-2.5 text-sm outline-none font-mono"
-                    style={inputStyle}
-                  />
-                </div>
+             ) : (
+               <div className="space-y-4">
+                 <div>
+                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: c.textFaint }}>
+                     Farmer Phone Number
+                   </label>
+                    <PhoneInput
+                      value={payDialog.phone}
+                      onChange={(val) => setPayDialog((prev) => ({ ...prev, phone: val }))}
+                      placeholder="712345678"
+                      prefix={COUNTRIES[0].code}
+                      className="w-full"
+                    />
+                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: c.textFaint }}>

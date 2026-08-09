@@ -11,6 +11,7 @@ import StatusBadge from '../components/ui/StatusBadge.jsx';
 import Pagination from '../components/ui/Pagination.jsx';
 import FarmerLayout from '../components/farmer/FarmerLayout.jsx';
 import { formatDate, formatKes } from '../data/mockData.js';
+import { PhoneInput, COUNTRIES } from '../components/ui/PhoneInput.jsx';
 
 export default function FarmerSubscriptions() {
   const { c } = useTheme();
@@ -19,13 +20,20 @@ export default function FarmerSubscriptions() {
   const navigate = useNavigate();
   const [subscriptions, setSubscriptions] = useState([]);
   const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 8, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   // STK Modal state for renewal
   const [selectedSub, setSelectedSub] = useState(null);
-  const [phone, setPhone] = useState(user?.phone || '254796598108');
+  const [phone, setPhone] = useState(() => {
+    const raw = user?.phone || '254796598108';
+    const matched = COUNTRIES.find((c) => raw.startsWith(c.code.replace('+', '')));
+    if (matched) {
+      return raw.slice(matched.code.replace('+', '').length);
+    }
+    return raw;
+  });
   const [submitting, setSubmitting] = useState(false);
   const [stkResponse, setStkResponse] = useState(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -34,9 +42,9 @@ export default function FarmerSubscriptions() {
     setLoading(true);
     setError('');
     try {
-      const { data } = await api.get('/subscriptions/my', { params: { page, limit: 10 } });
+      const { data } = await api.get('/subscriptions/my', { params: { page, limit: 8 } });
       setSubscriptions(data.subscriptions || []);
-      setPagination(data.pagination || { page: 1, limit: 10, total: 0, totalPages: 1 });
+      setPagination(data.pagination || { page: 1, limit: 8, total: 0, totalPages: 1 });
     } catch (err) {
       setError(err?.response?.data?.error || 'Failed to load subscription details');
     } finally {
@@ -94,7 +102,13 @@ export default function FarmerSubscriptions() {
     setSelectedSub(sub);
     setStkResponse(null);
     setPaymentSuccess(false);
-    setPhone(user?.phone || '254796598108');
+    const raw = user?.phone || '254796598108';
+    const matched = COUNTRIES.find((c) => raw.startsWith(c.code.replace('+', '')));
+    if (matched) {
+      setPhone(raw.slice(matched.code.replace('+', '').length));
+    } else {
+      setPhone(raw);
+    }
   };
 
   const handleInitiateStk = async (e) => {
@@ -105,7 +119,7 @@ export default function FarmerSubscriptions() {
     try {
       const { data } = await api.post('/subscriptions/subscribe-stk', {
         packageId: selectedSub.packageId,
-        phone,
+        phone: COUNTRIES[0].code.replace('+', '') + phone,
       });
       setStkResponse(data);
     } catch (err) {
@@ -226,21 +240,15 @@ export default function FarmerSubscriptions() {
             </p>
 
             {!stkResponse ? (
-              <form onSubmit={handleInitiateStk} className="space-y-4">
+               <form onSubmit={handleInitiateStk} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold mb-1">M-Pesa Phone Number</label>
-                  <div className="relative">
-                    <Phone size={16} className="absolute left-3 top-3" color={c.textFaint} />
-                    <input
-                      type="text"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="254796598108"
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg outline-none mf-mono border"
-                      style={{ background: c.bgElevated, borderColor: c.border, color: c.text }}
-                      required
-                    />
-                  </div>
+                  <PhoneInput
+                    value={phone}
+                    onChange={setPhone}
+                    placeholder="712345678"
+                    prefix={COUNTRIES[0].code}
+                  />
                   <p className="text-[11px] mt-1" style={{ color: c.textFaint }}>
                     An M-Pesa STK push prompt will be sent to your phone to complete payment.
                   </p>
@@ -272,7 +280,7 @@ export default function FarmerSubscriptions() {
                 <div>
                   <p className="font-semibold text-sm">STK Push Sent!</p>
                   <p className="text-xs mt-1" style={{ color: c.textMuted }}>
-                    Please check your phone (<strong>{phone}</strong>) and enter your M-Pesa PIN.
+                    Please check your phone (<strong>{COUNTRIES[0].code}{phone}</strong>) and enter your M-Pesa PIN.
                   </p>
                 </div>
                 <div className="pt-2 border-t" style={{ borderColor: c.border }}>

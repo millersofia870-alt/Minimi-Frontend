@@ -20,7 +20,7 @@ export default function AdminFarmers() {
     async function loadFarmers() {
       setLoading(true);
       const data = await tryApi(
-        async () => (await api.get('/admin/farmers', { params: { page } })).data,
+        async () => (await api.get('/admin/farmers?limit=10', { params: { page } })).data,
         { farmers: initialFarmers, pagination: { page: 1, limit: initialFarmers.length, total: initialFarmers.length, totalPages: 1, hasPrev: false, hasNext: false } },
       );
 

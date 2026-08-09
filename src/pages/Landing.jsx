@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Leaf, Stethoscope, MessageCircle, Camera, Wallet, MapPin,
-  ArrowRight, Users, TrendingUp, ClipboardList, CheckCircle2, ShieldCheck, Menu, X,
+  ArrowRight, Users, TrendingUp, ClipboardList, CheckCircle2, ShieldCheck, Menu, X, Mail,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -170,9 +170,18 @@ export default function Landing() {
                   {pkg.price === 0 ? 'Free' : formatKes(pkg.price)}
                   <span className="text-xs font-normal" style={{ color: c.textFaint }}> / {pkg.durationDays} days</span>
                 </div>
-                <p className="text-sm mt-4" style={{ color: c.textMuted }}>
-                  {pkg.description}
-                </p>
+                <ul className="mt-4 space-y-2 text-sm" style={{ color: c.textMuted }}>
+                  {pkg.description.split(',').map((point, i, arr) => {
+                    const clean = point.trim();
+                    if (!clean) return null;
+                    return (
+                      <li key={i} className="flex items-start gap-2">
+                        <CheckCircle2 size={15} className="shrink-0 mt-0.5" color={c.teal} />
+                        <span>{clean}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
 
               <div className="mt-8 pt-4 border-t" style={{ borderColor: c.border }}>
@@ -239,9 +248,15 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="max-w-7xl mx-auto px-6 md:px-10 py-8 border-t flex items-center justify-between text-sm"
+      <footer className="max-w-7xl mx-auto px-6 md:px-10 py-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-sm"
         style={{ borderColor: c.border, color: c.textFaint }}>
         <span className="mf-display" style={{ color: c.text }}>Minimi Agri</span>
+        <div className="flex items-center gap-2">
+          <Mail size={14} />
+          <a href="mailto:Minimiagri@outlook.com" className="hover:opacity-80 underline" style={{ color: c.textMuted }}>
+            Minimiagri@outlook.com
+          </a>
+        </div>
         {/* <button onClick={() => navigate('/admin')} className="mf-mono text-xs uppercase hover:opacity-80">Admin login →</button> */}
       </footer>
     </div>
